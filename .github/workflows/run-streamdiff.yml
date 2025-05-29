@@ -1,0 +1,48 @@
+name: Run Streamdiff PDF Comparison
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  compare-pdfs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Streamdiff CLI
+        run: |
+          echo "⬇️ Downloading Streamdiff CLI..."
+          curl -L -o streamdiff-cli.zip https://streamdiff.com/releases/streamdiff-cli-latest.zip
+          unzip streamdiff-cli.zip -d streamdiff-cli
+          chmod +x streamdiff-cli/streamdiff
+          sudo mv streamdiff-cli/streamdiff /usr/local/bin/streamdiff
+          streamdiff --version
+
+      - name: Run Streamdiff
+        run: |
+          mkdir -p diff_report
+          streamdiff output/test.pdf baseline/gold.pdf -o diff_report
+
+          if [ -f diff_report/has_diff.flag ]; then
+            echo "❌ Differences found!"
+            echo '{"status":"fail", "message":"PDFs differ"}' > summary.json
+            exit 1
+          else
+            echo "✅ PDFs match."
+            echo '{"status":"pass", "message":"No differences"}' > summary.json
+          fi
+
+      - name: Upload diff report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: streamdiff-report
+          path: diff_report/
+
+      - name: Upload summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: streamdiff-summary
+          path: summary.json
