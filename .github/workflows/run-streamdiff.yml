@@ -1,7 +1,7 @@
 name: Run Streamdiff PDF Comparison
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
 
 jobs:
   compare-pdfs:
@@ -11,11 +11,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Streamdiff CLI
+      - name: Set up Streamdiff CLI from repo
         run: |
-          echo "⬇️ Downloading Streamdiff CLI..."
-          curl -L -o streamdiff-cli.zip https://streamdiff.com/releases/streamdiff-cli-latest.zip
-          unzip streamdiff-cli.zip -d streamdiff-cli
+          echo "📦 Extracting Streamdiff CLI from repo..."
+          unzip .tools/streamdiff-cli.zip -d streamdiff-cli
           chmod +x streamdiff-cli/streamdiff
           sudo mv streamdiff-cli/streamdiff /usr/local/bin/streamdiff
           streamdiff --version
@@ -23,7 +22,7 @@ jobs:
       - name: Run Streamdiff
         run: |
           mkdir -p diff_report
-          streamdiff output/test.pdf baseline/gold.pdf -o diff_report
+          streamdiff .output/test.pdf .baseline/gold.pdf -o diff_report
 
           if [ -f diff_report/has_diff.flag ]; then
             echo "❌ Differences found!"
